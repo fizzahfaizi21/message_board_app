@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "362592212474",
+    "project_id": "messageboardchat",
+    "storage_bucket": "messageboardchat.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:362592212474:android:10d241d0634f4905adc043",
+        "android_client_info": {
+          "package_name": "com.example.message_board_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlMk8Fwj3Iw3nei_9FH4YQdrZ-sQJHvgY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
