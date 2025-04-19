@@ -1,170 +1,106 @@
 import 'package:flutter/material.dart';
-import 'package:message_board_app/models/message_model.dart';
-import 'package:message_board_app/services/auth_service.dart';
-import 'package:message_board_app/services/database_service.dart';
-import 'package:message_board_app/widgets/message_bubble.dart';
-import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChatScreen extends StatefulWidget {
-  final BoardModel board;
-
-  const ChatScreen({super.key, required this.board});
-
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController _messageController = TextEditingController();
-  final DatabaseService _databaseService = DatabaseService();
-  final ScrollController _scrollController = ScrollController();
-  late String _userId;
-  late String _userName;
-  bool _isLoading = true;
+  final messageController = TextEditingController();
+  final _firestore = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
 
-  @override
-  void initState() {
-    super.initState();
-    _getUserData();
-  }
+  void sendMessage(String boardName) async {
+    if (messageController.text.trim().isEmpty) return;
 
-  Future<void> _getUserData() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final user = authService.currentUser;
-    if (user != null) {
-      final userData = await authService.getUserData(user.uid);
-      if (userData != null) {
-        setState(() {
-          _userId = userData.uid;
-          _userName = '${userData.firstName} ${userData.lastName}';
-          _isLoading = false;
-        });
-      }
-    }
-  }
+    final user = _auth.currentUser;
+    final userDoc = await _firestore.collection('users').doc(user!.uid).get();
+    final displayName = '${userDoc['firstName']} ${userDoc['lastName']}';
 
-  void _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
+    await _firestore
+        .collection('boards')
+        .doc(boardName)
+        .collection('messages')
+        .add({
+      'text': messageController.text.trim(),
+      'sender': displayName,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
 
-    final messageText = _messageController.text.trim();
-    _messageController.clear();
-
-    // Scroll to the bottom
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
-
-    // Create and save the message
-    final message = MessageModel(
-      id: '',
-      text: messageText,
-      senderId: _userId,
-      senderName: _userName,
-      timestamp: DateTime.now(),
-      boardId: widget.board.id,
-    );
-
-    await _databaseService.createMessage(message);
-  }
-
-  @override
-  void dispose() {
-    _messageController.dispose();
-    _scrollController.dispose();
-    super.dispose();
+    messageController.clear();
   }
 
   @override
   Widget build(BuildContext context) {
+    final boardName = ModalRoute.of(context)!.settings.arguments as String;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.board.name),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
+      appBar: AppBar(title: Text(boardName)),
+      body: Column(
+        children: [
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _firestore
+                  .collection('boards')
+                  .doc(boardName)
+                  .collection('messages')
+                  .orderBy('timestamp', descending: false)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData)
+                  return Center(child: CircularProgressIndicator());
+                final messages = snapshot.data!.docs;
+                return ListView.builder(
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = messages[index];
+                    return ListTile(
+                      title: Text(msg['sender']),
+                      subtitle: Text(msg['text']),
+                      trailing: Text(
+                        msg['timestamp'] != null
+                            ? (msg['timestamp'] as Timestamp)
+                                .toDate()
+                                .toLocal()
+                                .toString()
+                                .substring(0, 16)
+                            : '',
+                        style: TextStyle(fontSize: 10),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          Divider(),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
               children: [
                 Expanded(
-                  child: StreamBuilder<List<MessageModel>>(
-                    stream: _databaseService.getMessagesStream(widget.board.id),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Center(
-                          child: Text(
-                            'No messages yet. Be the first to start the conversation!',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 16,
-                            ),
-                          ),
-                        );
-                      }
-
-                      return ListView.builder(
-                        controller: _scrollController,
-                        reverse: true,
-                        padding: const EdgeInsets.all(10),
-                        itemCount: snapshot.data!.length,
-                        itemBuilder: (ctx, index) {
-                          final message = snapshot.data![index];
-                          final isMe = message.senderId == _userId;
-
-                          return MessageBubble(
-                            message: message,
-                            isMe: isMe,
-                          );
-                        },
-                      );
-                    },
+                  child: TextField(
+                    controller: messageController,
+                    decoration: InputDecoration(
+                      hintText: 'Enter message...',
+                    ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        offset: const Offset(0, -2),
-                        blurRadius: 4,
-                        color: Colors.black.withOpacity(0.1),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          decoration: const InputDecoration(
-                            hintText: 'Type a message...',
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(16),
-                          ),
-                          textCapitalization: TextCapitalization.sentences,
-                          onSubmitted: (_) => _sendMessage(),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.send,
-                          color: Colors.blue,
-                        ),
-                        onPressed: _sendMessage,
-                      ),
-                    ],
-                  ),
+                IconButton(
+                  icon: Icon(Icons.send),
+                  onPressed: () {
+                    final board =
+                        ModalRoute.of(context)!.settings.arguments as String;
+                    sendMessage(board);
+                  },
                 ),
               ],
             ),
+          )
+        ],
+      ),
     );
   }
 }

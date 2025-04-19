@@ -1,40 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:provider/provider.dart';
-import 'firebase_options.dart';
-import 'package:message_board_app/services/auth_service.dart';
-import 'package:message_board_app/screens/splash_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import 'screens/splash_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/chat_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  runApp(const MyApp());
+  await Firebase.initializeApp();
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        Provider<AuthService>(
-          create: (_) => AuthService(),
+    return MaterialApp(
+      title: 'Message Board App',
+      theme: ThemeData(
+        scaffoldBackgroundColor: const Color(0xFFE6F0FF),
+        primaryColor: const Color(0xFFADCBE3),
+        colorScheme: ColorScheme.fromSwatch().copyWith(
+          secondary: const Color(0xFFFFF7CC),
         ),
-      ],
-      child: MaterialApp(
-        title: 'Chat Boards',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-          useMaterial3: true,
+        textTheme: GoogleFonts.quicksandTextTheme(),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
         ),
-        home: const SplashScreen(),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFADCBE3),
+            foregroundColor: Colors.black87,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+        ),
+        cardTheme: CardTheme(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 2,
+          color: Colors.white,
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        ),
       ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => SplashScreen(),
+        '/login': (context) => LoginScreen(),
+        '/register': (context) => RegisterScreen(),
+        '/home': (context) => HomeScreen(),
+        '/profile': (context) => ProfileScreen(),
+        '/settings': (context) => SettingsScreen(),
+        '/chat': (context) => ChatScreen(),
+      },
     );
   }
 }

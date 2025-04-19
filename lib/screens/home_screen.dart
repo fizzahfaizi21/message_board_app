@@ -1,39 +1,65 @@
 import 'package:flutter/material.dart';
-import 'package:message_board_app/models/message_model.dart';
-import 'package:message_board_app/screens/chat_screen.dart';
-import 'package:message_board_app/services/database_service.dart';
-import 'package:message_board_app/widgets/app_drawer.dart';
-import 'package:message_board_app/widgets/board_card.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  final List<Map<String, dynamic>> boards = [
+    {'name': 'General Chat', 'icon': Icons.forum},
+    {'name': 'Tech Talk', 'icon': Icons.computer},
+    {'name': 'Random', 'icon': Icons.coffee},
+  ];
+
+  Future<void> ensureBoardsExist() async {
+    final batch = _firestore.batch();
+    for (var board in boards) {
+      final docRef = _firestore.collection('boards').doc(board['name']);
+      final doc = await docRef.get();
+      if (!doc.exists) {
+        batch.set(docRef, {'createdAt': FieldValue.serverTimestamp()});
+      }
+    }
+    await batch.commit();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final databaseService = DatabaseService();
-    final List<BoardModel> boards = databaseService.getBoards();
+    ensureBoardsExist(); // Create boards on first load (safe for dev)
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Message Boards'),
-        elevation: 0,
+      appBar: AppBar(title: Text('Message Boards')),
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            DrawerHeader(child: Text('Menu')),
+            ListTile(
+              title: Text('Message Boards'),
+              onTap: () => Navigator.pushReplacementNamed(context, '/home'),
+            ),
+            ListTile(
+              title: Text('Profile'),
+              onTap: () => Navigator.pushNamed(context, '/profile'),
+            ),
+            ListTile(
+              title: Text('Settings'),
+              onTap: () => Navigator.pushNamed(context, '/settings'),
+            ),
+          ],
+        ),
       ),
-      drawer: const AppDrawer(),
       body: ListView.builder(
-        padding: const EdgeInsets.all(8.0),
         itemCount: boards.length,
         itemBuilder: (context, index) {
-          final board = boards[index];
-          return BoardCard(
-            board: board,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChatScreen(board: board),
-                ),
-              );
-            },
+          return ListTile(
+            leading: Icon(boards[index]['icon']),
+            title: Text(boards[index]['name']),
+            onTap: () => Navigator.pushNamed(
+              context,
+              '/chat',
+              arguments: boards[index]['name'],
+            ),
           );
         },
       ),
