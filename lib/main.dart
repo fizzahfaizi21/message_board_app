@@ -22,40 +22,67 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Message Board App',
       theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFFE6F0FF),
-        primaryColor: const Color(0xFFADCBE3),
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          secondary: const Color(0xFFFFF7CC),
+        scaffoldBackgroundColor: const Color(
+          0xFF9CECFB,
+        ), // Vibrant blue background
+        appBarTheme: AppBarTheme(
+          backgroundColor: const Color(0xFF673AB7), // Purple app bar
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+          ),
         ),
-        textTheme: GoogleFonts.quicksandTextTheme(),
+        primaryColor: const Color(0xFF673AB7), // Purple primary color
+        colorScheme: ColorScheme.fromSwatch().copyWith(
+          secondary: const Color(0xFFFF9800), // Orange accent color
+          tertiary: const Color(0xFF4CAF50), // Green for variety
+        ),
+        textTheme: GoogleFonts.poppinsTextTheme().apply(
+          bodyColor: const Color(0xFF333333),
+          displayColor: const Color(0xFF673AB7),
+        ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 14,
+          ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: Color(0xFF673AB7), width: 2),
           ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFADCBE3),
-            foregroundColor: Colors.black87,
+            backgroundColor: const Color(0xFF673AB7), // Purple buttons
+            foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
+            elevation: 4,
           ),
         ),
         cardTheme: CardTheme(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          elevation: 2,
+          elevation: 4,
           color: Colors.white,
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         ),
+        iconTheme: IconThemeData(color: const Color(0xFF673AB7), size: 24),
       ),
       initialRoute: '/',
       routes: {
